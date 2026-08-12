@@ -83,7 +83,7 @@ final class HotkeyManager {
         )
         let context = Unmanaged.passUnretained(self).toOpaque()
 
-        InstallEventHandler(
+        let installStatus = InstallEventHandler(
             GetApplicationEventTarget(),
             { _, event, userData in
                 guard let event, let userData else { return OSStatus(eventNotHandledErr) }
@@ -99,6 +99,11 @@ final class HotkeyManager {
                     &hotkeyID
                 )
                 guard status == noErr else { return status }
+                // Without this, any other app's Carbon hotkey handler
+                // sharing this event class would be misrouted into ours.
+                guard hotkeyID.signature == HotkeyManager.signature else {
+                    return OSStatus(eventNotHandledErr)
+                }
 
                 // Carbon delivers hot-key events on the main run loop.
                 MainActor.assumeIsolated {
@@ -113,6 +118,12 @@ final class HotkeyManager {
             context,
             &eventHandler
         )
+        // A failure here means every RegisterEventHotKey call below will
+        // still report success while nothing ever dispatches, so this must
+        // be surfaced rather than silently ignored.
+        if installStatus != noErr {
+            Log.warn("could not install hotkey event handler (status \(installStatus)); hotkeys will not fire")
+        }
     }
 
     private func handle(id: UInt32) {

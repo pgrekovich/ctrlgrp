@@ -13,10 +13,17 @@ final class AppCoordinator {
     private let hud = HUDPanel()
 
     init() {
-        let loaded = Config.load(from: Config.defaultURL)
-        for warning in loaded.warnings { Log.warn(warning) }
-        bindings = Bindings(defaults: loaded.config.defaults)
-        hudEnabled = loaded.config.hudEnabled
+        switch Config.load(from: Config.defaultURL) {
+        case .parsed(let loaded):
+            for warning in loaded.warnings { Log.warn(warning) }
+            bindings = Bindings(defaults: loaded.config.defaults)
+            hudEnabled = loaded.config.hudEnabled
+        case .unparsable(let warning):
+            // Nothing to preserve yet: this is the first read of the process.
+            Log.warn(warning)
+            bindings = Bindings(defaults: Config.empty.defaults)
+            hudEnabled = Config.empty.hudEnabled
+        }
     }
 
     func start() {
@@ -44,11 +51,21 @@ final class AppCoordinator {
     }
 
     private func reloadConfig() {
-        let loaded = Config.load(from: Config.defaultURL)
-        for warning in loaded.warnings { Log.warn(warning) }
-        // Session bindings outrank defaults and survive a reload by design.
-        bindings.updateDefaults(loaded.config.defaults)
-        Log.info("reloaded config, \(bindings.effectiveAll.count) slots bound")
+        switch Config.load(from: Config.defaultURL) {
+        case .parsed(let loaded):
+            for warning in loaded.warnings { Log.warn(warning) }
+            // Session bindings outrank defaults and survive a reload by design.
+            bindings.updateDefaults(loaded.config.defaults)
+            Log.info("reloaded config, \(bindings.effectiveAll.count) slots bound")
+            hud.refresh(bindings: bindings.effectiveAll)
+        case .unparsable(let warning):
+            // A half-saved edit must not unbind everything: keep whatever
+            // defaults are already loaded and leave the HUD as it is. Logged
+            // symmetrically with the success path so the log itself is
+            // evidence that nothing was unbound.
+            Log.warn(warning)
+            Log.warn("keeping previous config, \(bindings.effectiveAll.count) slots still bound")
+        }
     }
 
     private func handle(_ trigger: HotkeyManager.Trigger) {

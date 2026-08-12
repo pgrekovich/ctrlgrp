@@ -60,7 +60,12 @@ private func parse(_ json: String) throws -> ConfigParseResult {
 
 @Test func loadReturnsEmptyConfigAndWarningForMissingFile() {
     let missing = URL(filePath: "/tmp/ctrlgrp-does-not-exist-\(UUID().uuidString).json")
-    let result = Config.load(from: missing)
+    // A missing file is not malformed: it parses to an empty config with a
+    // hint, not to the "keep what you had" branch.
+    guard case .parsed(let result) = Config.load(from: missing) else {
+        Issue.record("expected .parsed for a missing file")
+        return
+    }
     #expect(result.config == Config.empty)
     #expect(result.warnings.count == 1)
 }
@@ -70,19 +75,27 @@ private func parse(_ json: String) throws -> ConfigParseResult {
     try Data(#"{ "defaults": { "2": "com.apple.Terminal" } }"#.utf8).write(to: url)
     defer { try? FileManager.default.removeItem(at: url) }
 
-    let result = Config.load(from: url)
+    guard case .parsed(let result) = Config.load(from: url) else {
+        Issue.record("expected .parsed for valid JSON")
+        return
+    }
     #expect(result.config.defaults[Slot(digit: 2)!] == "com.apple.Terminal")
     #expect(result.warnings.isEmpty)
 }
 
-@Test func loadReportsBrokenJSONWithoutThrowing() throws {
+@Test func loadReportsUnparsableForBrokenJSONRatherThanAnEmptyConfig() throws {
     let url = URL(filePath: NSTemporaryDirectory()).appending(path: "ctrlgrp-\(UUID().uuidString).json")
     try Data("{ broken".utf8).write(to: url)
     defer { try? FileManager.default.removeItem(at: url) }
 
-    let result = Config.load(from: url)
-    #expect(result.config == Config.empty)
-    #expect(result.warnings.count == 1)
+    // Malformed JSON must land in .unparsable, not silently become .parsed
+    // with an empty config: the caller needs to tell "file says empty" apart
+    // from "file is broken, keep what you already had".
+    guard case .unparsable(let warning) = Config.load(from: url) else {
+        Issue.record("expected .unparsable for broken JSON")
+        return
+    }
+    #expect(warning.contains(url.path()))
 }
 
 @Test func defaultURLPointsAtXDGStyleConfigPath() {

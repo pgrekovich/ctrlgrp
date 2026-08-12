@@ -29,6 +29,23 @@ public enum ConfigError: Error, Equatable {
     case malformedJSON(String)
 }
 
+/// The result of a config load, distinguishing "file is fine" (even a
+/// missing file, which legitimately means no default bindings) from "file
+/// exists but could not be parsed". Collapsing these into one shape is what
+/// caused a half-saved edit to wipe every default binding: the caller needs
+/// to be able to tell them apart to know whether to keep its current
+/// defaults or replace them.
+public enum ConfigLoadOutcome: Equatable, Sendable {
+    /// Parsed successfully. A missing file lands here too, with an empty
+    /// config, because deleting the file legitimately means "no default
+    /// bindings".
+    case parsed(ConfigParseResult)
+    /// The file exists but could not be parsed. The caller must keep
+    /// whatever defaults it already has: a half-saved edit must not unbind
+    /// everything.
+    case unparsable(warning: String)
+}
+
 extension Config {
     private struct DTO: Decodable {
         struct HUD: Decodable { var enabled: Bool? }
@@ -66,22 +83,22 @@ extension Config {
         )
     }
 
-    /// Reads and parses the file, degrading to an empty config with a warning.
-    /// A missing or broken config must never stop the app from starting.
-    public static func load(from url: URL) -> ConfigParseResult {
+    /// Reads and parses the file. A missing file is not malformed: it
+    /// degrades to an empty config with a warning, same as before. A file
+    /// that exists but fails to parse reports `.unparsable` instead, so the
+    /// caller can keep its current defaults rather than treat "broken" the
+    /// same as "empty".
+    public static func load(from url: URL) -> ConfigLoadOutcome {
         guard let data = try? Data(contentsOf: url) else {
-            return ConfigParseResult(
+            return .parsed(ConfigParseResult(
                 config: .empty,
                 warnings: ["no config at \(url.path()), starting with no default bindings"]
-            )
+            ))
         }
         do {
-            return try parse(data)
+            return .parsed(try parse(data))
         } catch {
-            return ConfigParseResult(
-                config: .empty,
-                warnings: ["could not parse \(url.path()): \(error)"]
-            )
+            return .unparsable(warning: "could not parse \(url.path()): \(error)")
         }
     }
 
