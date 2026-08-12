@@ -3,22 +3,14 @@
 Deliberately deferred during the initial build. Nothing here blocks using the
 app; all of it was reviewed and triaged as safe to leave open.
 
-## Open design question
+## Settled
 
-**Toggle-back relaunches an app you deliberately quit.** Pressing the slot of
-the app that is already frontmost sends you back to the previous app, and if
-that app is gone, the launch fallback starts it again.
-
-Repro: Terminal is frontmost, you quit it, macOS brings Finder forward, you
-press Finder's slot, Terminal relaunches.
-
-The launch fallback is right when the app you directly targeted quit a moment
-before the keypress. It is arguably wrong for toggle-back, where the intent is
-"take me back", not "start something".
-
-If it should stop relaunching: add `isPreviousRunning` to `Situation` and have
-`decideSwitch` return `.doNothing` when the previous app is gone. The whole
-change stays inside the tested pure function.
+**Toggle-back no longer relaunches an app you quit** (decided 2026-08-12). A
+direct call still launches, because asking for a slot means you want that app.
+Going back never launches, because it is navigation, not a request to start
+something. `Situation` carries `isPreviousRunning` and `decideSwitch` returns
+`.activateIfRunning` for the toggle-back path, which refuses to launch even if
+the app disappears between the decision and the action.
 
 ## Testability
 

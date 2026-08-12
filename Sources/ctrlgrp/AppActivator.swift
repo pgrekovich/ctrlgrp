@@ -20,7 +20,8 @@ final class AppActivator {
             isTargetFrontmost: frontmostBundleID == target,
             isTargetRunning: runningApp(target) != nil,
             isTargetInstalled: workspace.urlForApplication(withBundleIdentifier: target) != nil,
-            previous: previous
+            previous: previous,
+            isPreviousRunning: previous.map { runningApp($0) != nil } ?? false
         )
     }
 
@@ -35,6 +36,14 @@ final class AppActivator {
                 launch(bundleID)
                 return
             }
+            if !app.activate() {
+                Log.warn("could not activate \(bundleID)")
+            }
+        case .activateIfRunning(let bundleID):
+            // No launch fallback here, deliberately: this is a toggle back, and
+            // if the app quit in the meantime the user gets to stay put rather
+            // than have it reappear.
+            guard let app = runningApp(bundleID) else { return }
             if !app.activate() {
                 Log.warn("could not activate \(bundleID)")
             }

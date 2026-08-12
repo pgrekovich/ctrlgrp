@@ -4,8 +4,8 @@ RTS-style control groups for macOS apps. Bind applications to number keys and
 switch with one keystroke.
 
 - `option+N` focuses the app in slot N. Not running, it launches. Already
-  frontmost, focus goes back to the app you came from, or does nothing if
-  there is no previous app yet.
+  frontmost, focus goes back to the app you came from. Going back never starts
+  anything: if that app is gone, or there is no previous app yet, you stay put.
 - `option+shift+N` binds the frontmost app to slot N for this session.
 - `option` plus the backtick key toggles a HUD showing all ten slots.
 

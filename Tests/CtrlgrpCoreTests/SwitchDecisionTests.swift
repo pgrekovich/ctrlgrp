@@ -35,7 +35,29 @@ import CtrlgrpCore
         isTargetRunning: true,
         previous: "com.apple.Mail"
     )
-    #expect(decideSwitch(situation) == .activate("com.apple.Mail"))
+    #expect(decideSwitch(situation) == .activateIfRunning("com.apple.Mail"))
+}
+
+@Test func togglingBackToAnAppTheUserQuitDoesNothing() {
+    let situation = Situation(
+        target: "com.apple.Safari",
+        isTargetFrontmost: true,
+        isTargetRunning: true,
+        previous: "com.apple.Terminal",
+        isPreviousRunning: false
+    )
+    #expect(decideSwitch(situation) == .doNothing)
+}
+
+@Test func aDirectCallStillLaunchesEvenWhenThePreviousAppIsGone() {
+    let situation = Situation(
+        target: "com.google.Chrome",
+        isTargetFrontmost: false,
+        isTargetRunning: false,
+        previous: "com.apple.Terminal",
+        isPreviousRunning: false
+    )
+    #expect(decideSwitch(situation) == .launch("com.google.Chrome"))
 }
 
 @Test func focusedSlotWithNoPreviousAppDoesNothing() {

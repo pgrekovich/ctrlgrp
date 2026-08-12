@@ -66,8 +66,16 @@ final class HUDPanel {
 
     private func apply(bindings: [Slot: String], to panel: NSPanel) {
         let content = makeContentView(bindings: bindings)
+        // Measure BEFORE handing the view over. Assigning contentView resizes
+        // that view to the window's current content rect, which is zero on a
+        // freshly built panel, so measuring afterwards yields zero and the
+        // panel ends up an invisible 0x0 window.
+        let size = content.frame.size
+        if size.width == 0 || size.height == 0 {
+            Log.warn("hud content measured \(size), the panel would be invisible")
+        }
+        panel.setFrame(centeredFrame(size: size), display: false)
         panel.contentView = content
-        panel.setFrame(centeredFrame(size: content.frame.size), display: false)
     }
 
     private func centeredFrame(size: NSSize) -> NSRect {

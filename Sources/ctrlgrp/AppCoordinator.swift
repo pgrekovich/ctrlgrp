@@ -89,6 +89,10 @@ final class AppCoordinator {
             hud.refresh(bindings: bindings.effectiveAll)
         case .toggleHUD:
             hud.toggle(bindings: bindings.effectiveAll)
+            // Logged because this path has no other observable: an invisible
+            // panel and a hotkey that never fired look identical otherwise,
+            // which is exactly how a zero-sized panel went unnoticed once.
+            Log.info("hud toggled, now \(hud.isVisible ? "visible" : "hidden")")
         }
     }
 
