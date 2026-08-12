@@ -10,6 +10,7 @@ final class AppCoordinator {
     private let hudEnabled: Bool
     private var hotkeys: HotkeyManager?
     private var watcher: ConfigWatcher?
+    private let hud = HUDPanel()
 
     init() {
         let loaded = Config.load(from: Config.defaultURL)
@@ -68,8 +69,12 @@ final class AppCoordinator {
             guard bundleID != Bundle.main.bundleIdentifier else { return }
             bindings.bind(bundleID, to: slot)
             Log.info("bound slot \(slot) to \(bundleID)")
+            if hud.isVisible {
+                hud.hide()
+                hud.toggle(bindings: bindings.effectiveAll)
+            }
         case .toggleHUD:
-            break // Task 10
+            hud.toggle(bindings: bindings.effectiveAll)
         }
     }
 
