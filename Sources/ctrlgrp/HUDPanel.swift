@@ -14,8 +14,6 @@ final class HUDPanel {
         static let cellRadius: CGFloat = 5
         static let cellGap: CGFloat = 4
         static let digitToIcon: CGFloat = 5
-        /// Width of an unbound slot: a bare digit needs no room for an icon.
-        static let emptyCell: CGFloat = 14
         static let containerPad: CGFloat = 6
         static let containerRadius: CGFloat = 9
         /// Gap from the screen's top right corner.
@@ -59,6 +57,12 @@ final class HUDPanel {
         panel.orderFrontRegardless()
         panel.invalidateShadow()
         scheduleAutoHide()
+    }
+
+    /// Puts the HUD up, whether or not it is already showing, and restarts the
+    /// countdown. Used to confirm a fresh binding right when it is made.
+    func present(bindings: [Slot: String]) {
+        show(bindings: bindings)
     }
 
     private func show(bindings: [Slot: String]) {
@@ -141,7 +145,13 @@ final class HUDPanel {
         background.layer?.borderWidth = 1
         background.layer?.borderColor = NSColor.white.withAlphaComponent(0.06).cgColor
 
-        let strip = NSStackView(views: Slot.all.map { cell(for: $0, bundleID: bindings[$0]) })
+        // Only bound slots appear. Free numbers are not information worth
+        // spending width on, and dropping them is most of what keeps the strip
+        // narrow.
+        let cells = Slot.all.compactMap { slot in
+            bindings[slot].map { cell(for: slot, bundleID: $0) }
+        }
+        let strip = NSStackView(views: cells.isEmpty ? [emptyHint()] : cells)
         strip.orientation = .horizontal
         strip.spacing = Metrics.cellGap
         strip.alignment = .centerY
@@ -154,6 +164,9 @@ final class HUDPanel {
             strip.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -pad),
             strip.topAnchor.constraint(equalTo: background.topAnchor, constant: pad),
             strip.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -pad),
+            // Pinned so the bar keeps one height whether it holds cells or the
+            // empty hint, rather than shrinking when nothing is bound.
+            strip.heightAnchor.constraint(equalToConstant: Metrics.icon + Metrics.cellPadV * 2),
         ])
         // The caller reads this view's frame right after this call returns to
         // size the panel, so it must already be laid out and sized here
@@ -163,17 +176,24 @@ final class HUDPanel {
         return background
     }
 
-    private func digitLabel(_ slot: Slot, bound: Bool) -> NSTextField {
+    private func digitLabel(_ slot: Slot) -> NSTextField {
         let label = NSTextField(labelWithString: slot.description)
         label.font = .monospacedDigitSystemFont(ofSize: Metrics.digit, weight: .semibold)
-        label.textColor = bound ? .labelColor : NSColor.labelColor.withAlphaComponent(0.35)
+        label.textColor = .labelColor
         label.alignment = .center
         return label
     }
 
-    private func cell(for slot: Slot, bundleID: String?) -> NSView {
-        guard let bundleID else { return emptyCell(for: slot) }
+    /// Shown instead of the strip when nothing is bound at all, so the hotkey
+    /// still answers rather than appearing to do nothing.
+    private func emptyHint() -> NSView {
+        let hint = NSTextField(labelWithString: "no slots bound")
+        hint.font = .systemFont(ofSize: Metrics.digit, weight: .regular)
+        hint.textColor = NSColor.labelColor.withAlphaComponent(0.35)
+        return hint
+    }
 
+    private func cell(for slot: Slot, bundleID: String) -> NSView {
         let iconView = NSImageView()
         iconView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -200,7 +220,7 @@ final class HUDPanel {
             iconView.imageScaling = .scaleNone
         }
 
-        let row = NSStackView(views: [digitLabel(slot, bound: true), iconView])
+        let row = NSStackView(views: [digitLabel(slot), iconView])
         row.orientation = .horizontal
         row.spacing = Metrics.digitToIcon
         row.alignment = .centerY
@@ -221,20 +241,4 @@ final class HUDPanel {
         return box
     }
 
-    /// An unbound slot is a bare dim digit with no box behind it. Dropping the
-    /// placeholder artwork is most of what keeps the strip small.
-    private func emptyCell(for slot: Slot) -> NSView {
-        let label = digitLabel(slot, bound: false)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        let holder = NSView()
-        holder.translatesAutoresizingMaskIntoConstraints = false
-        holder.addSubview(label)
-        NSLayoutConstraint.activate([
-            holder.widthAnchor.constraint(equalToConstant: Metrics.emptyCell),
-            holder.heightAnchor.constraint(equalToConstant: Metrics.icon + Metrics.cellPadV * 2),
-            label.centerXAnchor.constraint(equalTo: holder.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: holder.centerYAnchor),
-        ])
-        return holder
-    }
 }

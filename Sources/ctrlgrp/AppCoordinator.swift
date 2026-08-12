@@ -86,7 +86,11 @@ final class AppCoordinator {
             guard bundleID != Bundle.main.bundleIdentifier else { return }
             bindings.bind(bundleID, to: slot)
             Log.info("bound slot \(slot) to \(bundleID)")
-            hud.refresh(bindings: bindings.effectiveAll)
+            // Pop the HUD up rather than only refreshing an open one: seeing the
+            // new binding land next to the existing ones IS the confirmation
+            // that the keypress registered. Still gated by the config switch, so
+            // hud.enabled false means never.
+            if hudEnabled { hud.present(bindings: bindings.effectiveAll) }
         case .toggleHUD:
             hud.toggle(bindings: bindings.effectiveAll)
             // Logged because this path has no other observable: an invisible

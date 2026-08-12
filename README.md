@@ -6,8 +6,11 @@ switch with one keystroke.
 - `option+N` focuses the app in slot N. Not running, it launches. Already
   frontmost, focus goes back to the app you came from. Going back never starts
   anything: if that app is gone, or there is no previous app yet, you stay put.
-- `option+shift+N` binds the frontmost app to slot N for this session.
-- `option` plus the backtick key toggles a HUD showing all ten slots.
+- `option+shift+N` binds the frontmost app to slot N for this session, and pops
+  the HUD up so you can see the new binding alongside the others.
+- `option` plus the backtick key toggles the HUD, a strip in the top right
+  listing the slots that are bound. It hides itself after two seconds; pressing
+  again hides it at once.
 
 Slots are the digits 1-9 and 0. Hotkeys are bound to physical keys, so they
 behave the same on any keyboard layout. While ctrlgrp runs, those combinations
