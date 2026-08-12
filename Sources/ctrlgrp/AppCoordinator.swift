@@ -9,6 +9,7 @@ final class AppCoordinator {
     private let activator = AppActivator()
     private let hudEnabled: Bool
     private var hotkeys: HotkeyManager?
+    private var watcher: ConfigWatcher?
 
     init() {
         let loaded = Config.load(from: Config.defaultURL)
@@ -33,6 +34,20 @@ final class AppCoordinator {
             Log.warn("could not register: \(failures.joined(separator: ", "))")
         }
         self.hotkeys = hotkeys
+
+        let watcher = ConfigWatcher(url: Config.defaultURL) { [weak self] in
+            self?.reloadConfig()
+        }
+        watcher.start()
+        self.watcher = watcher
+    }
+
+    private func reloadConfig() {
+        let loaded = Config.load(from: Config.defaultURL)
+        for warning in loaded.warnings { Log.warn(warning) }
+        // Session bindings outrank defaults and survive a reload by design.
+        bindings.updateDefaults(loaded.config.defaults)
+        Log.info("reloaded config, \(bindings.effectiveAll.count) slots bound")
     }
 
     private func handle(_ trigger: HotkeyManager.Trigger) {
