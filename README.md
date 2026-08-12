@@ -4,7 +4,8 @@ RTS-style control groups for macOS apps. Bind applications to number keys and
 switch with one keystroke.
 
 - `option+N` focuses the app in slot N. Not running, it launches. Already
-  frontmost, focus goes back to the app you came from.
+  frontmost, focus goes back to the app you came from, or does nothing if
+  there is no previous app yet.
 - `option+shift+N` binds the frontmost app to slot N for this session.
 - `option` plus the backtick key toggles a HUD showing all ten slots.
 
@@ -24,7 +25,16 @@ open /Applications/ctrlgrp.app
 It registers itself as a login item on first launch from `/Applications`. No
 Accessibility or Input Monitoring permission is needed.
 
-To remove it: quit the app, then `make uninstall`.
+To remove it, since ctrlgrp has no dock icon or menu bar item to quit from:
+
+```bash
+pkill ctrlgrp
+make uninstall
+```
+
+Then remove ctrlgrp from System Settings > General > Login Items. Uninstalling
+deletes the app bundle but cannot unregister the login item, since that
+registration lives at the OS level and survives the bundle it points to.
 
 ## Configure
 

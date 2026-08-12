@@ -6,7 +6,12 @@ enum LoginItem {
     /// build directory, so development runs never install a login item that
     /// points at a path that will be deleted.
     static func ensureRegistered() {
-        guard Bundle.main.bundleURL.path().contains("/Applications/") else { return }
+        // percentEncoded: false, or a path component containing a space would
+        // come back percent-escaped and never equal the literal directory.
+        let bundleDirectory = Bundle.main.bundleURL
+            .deletingLastPathComponent()
+            .path(percentEncoded: false)
+        guard bundleDirectory == "/Applications" else { return }
 
         let service = SMAppService.mainApp
         switch service.status {
@@ -22,7 +27,7 @@ enum LoginItem {
                 Log.warn("could not register login item: \(error.localizedDescription)")
             }
         @unknown default:
-            return
+            Log.warn("unrecognised login item status, skipping registration")
         }
     }
 }
