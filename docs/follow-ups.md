@@ -12,6 +12,14 @@ something. `Situation` carries `isPreviousRunning` and `decideSwitch` returns
 `.activateIfRunning` for the toggle-back path, which refuses to launch even if
 the app disappears between the decision and the action.
 
+## Distribution
+
+Releases are signed ad hoc, so anyone downloading the disk image has to clear
+the quarantine flag by hand. Removing that step needs an Apple Developer
+Program membership: sign with a Developer ID certificate and notarize in the
+release workflow. That is signing configuration and four repository secrets,
+not a code change, and the app itself needs nothing new for it.
+
 ## Testability
 
 - `ConfigWatcher` lives in the executable target, so it has no unit tests. Moving
