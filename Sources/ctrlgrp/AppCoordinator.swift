@@ -69,10 +69,7 @@ final class AppCoordinator {
             guard bundleID != Bundle.main.bundleIdentifier else { return }
             bindings.bind(bundleID, to: slot)
             Log.info("bound slot \(slot) to \(bundleID)")
-            if hud.isVisible {
-                hud.hide()
-                hud.toggle(bindings: bindings.effectiveAll)
-            }
+            hud.refresh(bindings: bindings.effectiveAll)
         case .toggleHUD:
             hud.toggle(bindings: bindings.effectiveAll)
         }

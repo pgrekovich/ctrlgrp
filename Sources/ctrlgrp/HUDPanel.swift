@@ -6,6 +6,11 @@ import CtrlgrpCore
 /// frontmost.
 @MainActor
 final class HUDPanel {
+    // Built once and kept for the process lifetime. NSApplication retains
+    // every NSPanel in its window list once created, ordered in or out,
+    // regardless of external references, so a fresh panel per toggle would
+    // never be released: in a daemon that runs for weeks that is an
+    // unbounded leak of the whole view tree, not a one-off allocation.
     private var panel: NSPanel?
 
     var isVisible: Bool { panel?.isVisible ?? false }
@@ -20,19 +25,35 @@ final class HUDPanel {
 
     func hide() {
         panel?.orderOut(nil)
-        panel = nil
+    }
+
+    /// Rebuilds the visible content in place. A no-op while hidden: there is
+    /// nothing on screen to refresh, and showing the panel here would react
+    /// to a bind the user did not ask the HUD to appear for.
+    func refresh(bindings: [Slot: String]) {
+        guard let panel, panel.isVisible else { return }
+        apply(bindings: bindings, to: panel)
+        panel.orderFrontRegardless()
+        panel.invalidateShadow()
     }
 
     private func show(bindings: [Slot: String]) {
-        let content = makeContentView(bindings: bindings)
-        let size = content.frame.size
+        let panel = panel ?? makePanel()
+        self.panel = panel
+        apply(bindings: bindings, to: panel)
+        // orderFrontRegardless, not makeKeyAndOrderFront: showing the HUD must
+        // not change which app is frontmost.
+        panel.orderFrontRegardless()
+        panel.invalidateShadow()
+    }
+
+    private func makePanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: size),
+            contentRect: .zero,
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
-        panel.contentView = content
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
@@ -40,16 +61,19 @@ final class HUDPanel {
         panel.ignoresMouseEvents = true
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
-        panel.setFrame(centeredFrame(size: size), display: false)
-        // orderFrontRegardless, not makeKeyAndOrderFront: showing the HUD must
-        // not change which app is frontmost.
-        panel.orderFrontRegardless()
-        self.panel = panel
+        return panel
+    }
+
+    private func apply(bindings: [Slot: String], to panel: NSPanel) {
+        let content = makeContentView(bindings: bindings)
+        panel.contentView = content
+        panel.setFrame(centeredFrame(size: content.frame.size), display: false)
     }
 
     private func centeredFrame(size: NSSize) -> NSRect {
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
             ?? NSScreen.main
+            ?? NSScreen.screens.first
         guard let visible = screen?.visibleFrame else {
             return NSRect(origin: .zero, size: size)
         }
@@ -68,6 +92,9 @@ final class HUDPanel {
         background.state = .active
         background.wantsLayer = true
         background.layer?.cornerRadius = 16
+        // cornerRadius alone does not clip a visual effect view's backdrop
+        // sublayer; masksToBounds is what actually rounds the rendered material.
+        background.layer?.masksToBounds = true
 
         let row = NSStackView(views: Slot.all.map { cell(for: $0, bundleID: bindings[$0]) })
         row.orientation = .horizontal
@@ -83,8 +110,9 @@ final class HUDPanel {
             row.topAnchor.constraint(equalTo: background.topAnchor, constant: padding),
             row.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -padding),
         ])
-        // Resolve the constraints now: fittingSize is only meaningful after a
-        // layout pass, and a zero-sized panel would be invisible.
+        // The caller reads this view's frame right after this call returns to
+        // size the panel, so it must already be laid out and sized here
+        // rather than left for a layout pass that may never happen.
         background.layoutSubtreeIfNeeded()
         background.frame = NSRect(origin: .zero, size: background.fittingSize)
         return background
