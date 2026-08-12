@@ -106,13 +106,27 @@ Data flow: hotkey → HotkeyManager callback → Bindings lookup → Switcher ac
 Bind flow: hotkey → frontmost bundle id → Bindings overlay. No polling
 anywhere; the daemon is fully event-driven.
 
-## Autostart & install
+## Packaging, autostart & install
 
-`Makefile`: `make build` (swift build -c release), `make install` (copy binary
-to `~/.local/bin/ctrlgrp`, install LaunchAgent plist to
-`~/Library/LaunchAgents/com.pgrekovich.ctrlgrp.plist`, `launchctl bootstrap`).
-`make uninstall` reverses it. LaunchAgent: `RunAtLoad=true`, `KeepAlive=true`
-(restart on crash), stdout/stderr to `~/Library/Logs/ctrlgrp.log`.
+The build artifact is a proper app bundle, `ctrlgrp.app`, so distribution is
+"drag into /Applications". SwiftPM produces the binary; the `Makefile`
+assembles the bundle:
+
+- `make build` - `swift build -c release`.
+- `make app` - assemble `ctrlgrp.app` (binary into `Contents/MacOS/`,
+  generated `Info.plist` with `LSUIElement=true` + bundle id
+  `com.pgrekovich.ctrlgrp`, optional icns) and ad-hoc sign (`codesign -s -`).
+- `make install` - copy the bundle to `/Applications`.
+
+Autostart via `SMAppService.mainApp.register()` on first launch (standard
+login item, visible in System Settings). Logs via `os_log` (Console.app).
+
+Distribution levels, by intent:
+- Personal use: ad-hoc signing is enough. This is v1.
+- Public download (dmg/zip without Gatekeeper warnings): requires Apple
+  Developer ID ($99/yr) + notarization - a signing/CI step, no code changes.
+- App Store: possible (all APIs used are sandbox-compatible; rcmd ships this
+  way), but out of scope for v1.
 
 ## Permissions
 
