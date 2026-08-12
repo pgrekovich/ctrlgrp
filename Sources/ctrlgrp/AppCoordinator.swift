@@ -8,8 +8,10 @@ final class AppCoordinator {
     private let tracker = FrontmostTracker()
     private let activator = AppActivator()
     private let hudEnabled: Bool
+    private let menuBarEnabled: Bool
     private var hotkeys: HotkeyManager?
     private var watcher: ConfigWatcher?
+    private var statusItem: StatusItemController?
     private let hud = HUDPanel()
 
     init() {
@@ -18,11 +20,13 @@ final class AppCoordinator {
             for warning in loaded.warnings { Log.warn(warning) }
             bindings = Bindings(defaults: loaded.config.defaults)
             hudEnabled = loaded.config.hudEnabled
+            menuBarEnabled = loaded.config.menuBarEnabled
         case .unparsable(let warning):
             // Nothing to preserve yet: this is the first read of the process.
             Log.warn(warning)
             bindings = Bindings(defaults: Config.empty.defaults)
             hudEnabled = Config.empty.hudEnabled
+            menuBarEnabled = Config.empty.menuBarEnabled
         }
     }
 
@@ -48,6 +52,14 @@ final class AppCoordinator {
         }
         watcher.start()
         self.watcher = watcher
+
+        // Like the HUD flag, read once at launch: a status item appearing and
+        // vanishing on config edits would be more surprising than a restart.
+        if menuBarEnabled {
+            statusItem = StatusItemController(configURL: Config.defaultURL) { [weak self] in
+                self?.reloadConfig()
+            }
+        }
     }
 
     private func reloadConfig() {
@@ -111,7 +123,12 @@ final class AppCoordinator {
             guard
                 let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey]
                     as? NSRunningApplication,
-                let bundleID = app.bundleIdentifier
+                let bundleID = app.bundleIdentifier,
+                // Never record ctrlgrp itself: with a menu bar item the app has
+                // clickable UI, and if interacting with it ever counts as an
+                // activation, "previous" would collapse onto ctrlgrp and
+                // toggle-back would silently stop working.
+                bundleID != Bundle.main.bundleIdentifier
             else { return }
 
             MainActor.assumeIsolated {

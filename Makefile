@@ -26,7 +26,7 @@ bundle:
 	rm -rf $(APP)
 	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
 	cp $(BINARY) $(APP)/Contents/MacOS/$(APP_NAME)
-	cp Resources/$(APP_NAME).icns $(APP)/Contents/Resources/
+	cp Resources/$(APP_NAME).icns Resources/menubar.png $(APP)/Contents/Resources/
 	sed -e 's/@BUNDLE_ID@/$(BUNDLE_ID)/g' -e 's/@VERSION@/$(VERSION)/g' \
 		Resources/Info.plist.in > $(APP)/Contents/Info.plist
 	codesign --force --sign - $(APP)
@@ -51,6 +51,7 @@ icns:
 	rsvg-convert -w 512  -h 512  icon.svg -o .build/icon.iconset/icon_512x512.png
 	rsvg-convert -w 1024 -h 1024 icon.svg -o .build/icon.iconset/icon_512x512@2x.png
 	iconutil -c icns .build/icon.iconset -o Resources/$(APP_NAME).icns
+	rsvg-convert -w 36 -h 36 design/menubar.svg -o Resources/menubar.png
 	@echo "built Resources/$(APP_NAME).icns"
 
 app: build

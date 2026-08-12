@@ -101,3 +101,13 @@ private func parse(_ json: String) throws -> ConfigParseResult {
 @Test func defaultURLPointsAtXDGStyleConfigPath() {
     #expect(Config.defaultURL.path().hasSuffix(".config/ctrlgrp/config.json"))
 }
+
+@Test func menuBarDefaultsToEnabledWhenAbsent() throws {
+    let result = try parse(#"{ "defaults": { "1": "com.apple.Safari" } }"#)
+    #expect(result.config.menuBarEnabled == true)
+}
+
+@Test func menuBarCanBeDisabled() throws {
+    let result = try parse(#"{ "menubar": { "enabled": false } }"#)
+    #expect(result.config.menuBarEnabled == false)
+}

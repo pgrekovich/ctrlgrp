@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="256 256 512 512">
+  <path d="M 414 296 H 348 Q 296 296 296 348 V 414 M 610 296 H 676 Q 728 296 728 348 V 414 M 414 728 H 348 Q 296 728 296 676 V 610 M 610 728 H 676 Q 728 728 728 676 V 610" fill="none" stroke="#000000" stroke-width="46" stroke-linecap="round"/>
+  <text x="512" y="652.4" font-family="'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-weight="700" font-size="390" text-anchor="middle" fill="#000000">3</text>
+</svg>

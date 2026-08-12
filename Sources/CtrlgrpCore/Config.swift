@@ -5,10 +5,12 @@ import Foundation
 public struct Config: Equatable, Sendable {
     public var defaults: [Slot: String]
     public var hudEnabled: Bool
+    public var menuBarEnabled: Bool
 
-    public init(defaults: [Slot: String] = [:], hudEnabled: Bool = true) {
+    public init(defaults: [Slot: String] = [:], hudEnabled: Bool = true, menuBarEnabled: Bool = true) {
         self.defaults = defaults
         self.hudEnabled = hudEnabled
+        self.menuBarEnabled = menuBarEnabled
     }
 
     public static let empty = Config()
@@ -48,9 +50,10 @@ public enum ConfigLoadOutcome: Equatable, Sendable {
 
 extension Config {
     private struct DTO: Decodable {
-        struct HUD: Decodable { var enabled: Bool? }
+        struct Toggle: Decodable { var enabled: Bool? }
         var defaults: [String: String]?
-        var hud: HUD?
+        var hud: Toggle?
+        var menubar: Toggle?
     }
 
     public static func parse(_ data: Data) throws -> ConfigParseResult {
@@ -76,7 +79,11 @@ extension Config {
         }
 
         return ConfigParseResult(
-            config: Config(defaults: defaults, hudEnabled: dto.hud?.enabled ?? true),
+            config: Config(
+                defaults: defaults,
+                hudEnabled: dto.hud?.enabled ?? true,
+                menuBarEnabled: dto.menubar?.enabled ?? true
+            ),
             // Dictionary iteration order is unspecified; sorting keeps the
             // warning list stable for tests and for log diffing.
             warnings: warnings.sorted()

@@ -41,10 +41,16 @@ Accessibility or Input Monitoring permission is needed.
 
 [releases]: ../../releases/latest
 
-To remove it, since ctrlgrp has no dock icon or menu bar item to quit from:
+A small menu bar item offers Reload Config, Edit Config, Reveal in Finder, and
+Quit. Menu bar managers like Bartender hide new items by default, so if the
+icon is missing, look in the manager's hidden section first. The item can be
+turned off entirely with `"menubar": { "enabled": false }` in the config, read
+at launch.
+
+To remove ctrlgrp, quit it from the menu bar item (or `pkill ctrlgrp` if the
+item is disabled), then:
 
 ```bash
-pkill ctrlgrp
 make uninstall
 ```
 
@@ -62,16 +68,19 @@ Create `~/.config/ctrlgrp/config.json`:
     "1": "com.google.Chrome",
     "3": "com.googlecode.iterm2"
   },
-  "hud": { "enabled": true }
+  "hud": { "enabled": true },
+  "menubar": { "enabled": true }
 }
 ```
 
 `defaults` are the bindings restored on every launch. Edits are picked up
-immediately, no restart needed, except for `hud.enabled` which is read at
-launch.
+immediately, no restart needed, except for `hud.enabled` and
+`menubar.enabled`, which are read at launch.
 
 Bindings made with `option+shift+N` live in memory only and are gone after a
-restart, leaving the defaults in place. ctrlgrp never writes this file.
+restart, leaving the defaults in place. ctrlgrp never writes this file, with
+one exception: clicking Create Config in the menu bar item when no config
+exists yet writes a starter file. An existing config is never touched.
 
 Find an app's bundle id with:
 
