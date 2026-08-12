@@ -1,0 +1,72 @@
+name: Release
+
+# Tag-driven: pushing v0.2.0 builds and publishes that version. The tag is the
+# single source of truth for the version, so nothing has to be edited in the
+# repo to cut a release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Release notes are derived from the commits since the previous tag,
+          # so the whole history and every tag have to be present.
+          fetch-depth: 0
+
+      - name: Toolchain
+        run: swift --version
+
+      # A tag that cannot pass its own tests is not a release.
+      - name: Test
+        run: swift test
+
+      - name: Build the universal disk image
+        run: make dmg VERSION="${GITHUB_REF_NAME#v}"
+
+      - name: Verify the shipped binary
+        run: |
+          set -euo pipefail
+          BIN=ctrlgrp.app/Contents/MacOS/ctrlgrp
+          lipo -info "$BIN"
+          # Fail loudly rather than shipping an Apple-silicon-only build to
+          # someone on an Intel Mac.
+          lipo -archs "$BIN" | grep -q x86_64
+          lipo -archs "$BIN" | grep -q arm64
+          codesign --verify --deep --strict --verbose=2 ctrlgrp.app
+
+      - name: Assemble release notes
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          DMG="ctrlgrp-${VERSION}.dmg"
+          {
+            scripts/release-notes.sh "$GITHUB_REF_NAME"
+            printf '\n## Install\n\n'
+            printf 'Open the disk image and drag ctrlgrp into Applications, then launch it.\n'
+            printf 'It registers itself as a login item on first launch and asks for no\n'
+            printf 'permissions at all: no Accessibility, no Input Monitoring.\n\n'
+            printf 'The build is signed ad hoc rather than with an Apple Developer ID, so\n'
+            printf 'macOS quarantines it on download and will claim it is damaged. To clear\n'
+            printf 'that after dragging it in:\n\n'
+            printf '```bash\nxattr -dr com.apple.quarantine /Applications/ctrlgrp.app\n```\n\n'
+            printf 'Universal binary, Apple silicon and Intel. Requires macOS 14 or newer.\n\n'
+            printf '`shasum -a 256`\n\n```\n%s\n```\n' "$(shasum -a 256 "$DMG")"
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md \
+            "ctrlgrp-${GITHUB_REF_NAME#v}.dmg"

@@ -18,7 +18,18 @@ no longer type their special characters.
 
 ## Install
 
-Requires macOS 14 or newer.
+Requires macOS 14 or newer. Universal binary, Apple silicon and Intel.
+
+Grab the disk image from the [latest release][releases], drag ctrlgrp into
+Applications, and launch it. Builds are signed ad hoc rather than with an Apple
+Developer ID, so macOS quarantines the download and will claim the app is
+damaged. Clear that once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ctrlgrp.app
+```
+
+Or build it yourself, which skips the quarantine entirely:
 
 ```bash
 make install
@@ -27,6 +38,8 @@ open /Applications/ctrlgrp.app
 
 It registers itself as a login item on first launch from `/Applications`. No
 Accessibility or Input Monitoring permission is needed.
+
+[releases]: ../../releases/latest
 
 To remove it, since ctrlgrp has no dock icon or menu bar item to quit from:
 
@@ -77,4 +90,30 @@ Logs go to the unified log and to stderr:
 
 ```bash
 log stream --predicate 'subsystem == "com.pgrekovich.ctrlgrp"' --level info
+```
+
+## Release
+
+Releases are cut by pushing a tag. The tag is the version: nothing in the repo
+needs editing first.
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow runs the tests, builds a universal disk image, checks the binary
+really carries both architectures, writes release notes from the commit
+subjects since the previous tag, and publishes it all as a GitHub release.
+
+To see what the notes will say before tagging:
+
+```bash
+scripts/release-notes.sh v0.1.0
+```
+
+To build the same disk image locally:
+
+```bash
+make dmg VERSION=0.1.0
 ```

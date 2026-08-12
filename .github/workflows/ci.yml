@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    # macos-latest rather than a pinned image so this keeps working as GitHub
+    # retires runners. Pin it to a specific version if a toolchain change ever
+    # breaks a build.
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: swift --version
+
+      - name: Test
+        run: swift test
+
+      # Catches breakage that only shows up in a release build or in bundle
+      # assembly, which the test target never exercises.
+      - name: Build the app bundle
+        run: make app
