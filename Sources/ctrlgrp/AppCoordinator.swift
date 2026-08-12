@@ -43,8 +43,16 @@ final class AppCoordinator {
                 previous: tracker.previous
             )
             activator.perform(decideSwitch(situation))
-        case .bind:
-            break // Task 8
+        case .bind(let slot):
+            guard let bundleID = activator.frontmostBundleID else {
+                Log.warn("no frontmost app to bind")
+                return
+            }
+            // Binding ctrlgrp itself would produce a slot that can never come
+            // forward, since the app has no windows.
+            guard bundleID != Bundle.main.bundleIdentifier else { return }
+            bindings.bind(bundleID, to: slot)
+            Log.info("bound slot \(slot) to \(bundleID)")
         case .toggleHUD:
             break // Task 10
         }
