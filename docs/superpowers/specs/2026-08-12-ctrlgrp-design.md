@@ -75,8 +75,14 @@ the panel.
 ## Architecture
 
 SwiftPM executable package (no Xcode required, builds with CLT; Swift 6.3 /
-macOS 26 host). No third-party dependencies. Frameworks: AppKit, Carbon
-(hotkeys only).
+macOS 26 host). Frameworks: AppKit, Carbon (hotkeys only), ServiceManagement
+(login item), os.Logger.
+
+Dependencies: none in the shipped binary. The test target depends on
+`apple/swift-testing`, because a CLT-only install has no XCTest and its bundled
+`Testing.framework` is missing the runtime dylib it needs. Test sources use the
+same API as the toolchain version, so installing full Xcode later reduces this
+to a Package.swift change.
 
 Components (one file each):
 
@@ -144,19 +150,25 @@ experience is: install, it works.
 
 ## Testing
 
-- Unit tests (XCTest, `swift test`): Config parsing (valid, missing, broken,
-  unknown keys), Bindings two-layer semantics (overlay wins, reload preserves
-  overlay), Switcher decision tree via mocked workspace protocol
-  (running/not-running/frontmost/missing-on-disk).
+- Unit tests (Swift Testing, `swift test`): Slot parsing, Config parsing
+  (valid, missing, broken, unknown keys), Bindings two-layer semantics (overlay
+  wins, reload preserves overlay), frontmost tracking, and the switch decision
+  tree (running / not running / already frontmost / missing on disk). The
+  decision tree is a pure function over a `Situation` value, so it needs no
+  mocking; NSWorkspace stays in the untested-by-design glue layer.
 - Manual E2E checklist for what can't be automated headlessly: hotkeys fire,
   keystroke consumed, toggle-back, launch, HUD rendering, config hot-reload,
   LaunchAgent autostart after reboot.
 
 ## Known risks
 
-- **macOS 14+ cooperative activation**: activating another app from a
-  background daemon may need care (`activate()` behavior changed). All app
-  switchers solve this; verify first, at project start, since it is the core.
+- **macOS 14+ cooperative activation**: CLOSED, verified on 2026-08-12. A
+  minimal accessory `.app` bundle called `NSRunningApplication.activate()` and
+  Finder really came forward on macOS 26.5.2, with no permission prompt;
+  activating the previously frontmost app afterwards restored focus, which also
+  validates toggle-back. Digit key codes were confirmed non-sequential
+  (`kVK_ANSI_5 == 23`, `kVK_ANSI_6 == 22`), and all 21 hotkeys registered with
+  `noErr`.
 - Carbon hotkey API is old but not deprecated-for-removal; it remains the only
   permission-free global hotkey mechanism. If it ever dies, fallback is
   CGEventTap + Input Monitoring permission (explicit non-goal for v1).
