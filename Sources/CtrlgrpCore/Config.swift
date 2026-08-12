@@ -92,13 +92,13 @@ extension Config {
         guard let data = try? Data(contentsOf: url) else {
             return .parsed(ConfigParseResult(
                 config: .empty,
-                warnings: ["no config at \(url.path()), starting with no default bindings"]
+                warnings: ["no config at \(url.path(percentEncoded: false)), starting with no default bindings"]
             ))
         }
         do {
             return .parsed(try parse(data))
         } catch {
-            return .unparsable(warning: "could not parse \(url.path()): \(error)")
+            return .unparsable(warning: "could not parse \(url.path(percentEncoded: false)): \(error)")
         }
     }
 
