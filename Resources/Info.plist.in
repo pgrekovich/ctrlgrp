@@ -3,6 +3,7 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleExecutable</key><string>ctrlgrp</string>
+  <key>CFBundleIconFile</key><string>ctrlgrp</string>
   <key>CFBundleIdentifier</key><string>@BUNDLE_ID@</string>
   <key>CFBundleName</key><string>ctrlgrp</string>
   <key>CFBundlePackageType</key><string>APPL</string>

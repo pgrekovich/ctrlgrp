@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg_brackets" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1C1F26"/>
+      <stop offset="1" stop-color="#111318"/>
+    </linearGradient>
+    <clipPath id="clip_brackets"><rect x="100" y="100" width="824" height="824" rx="185.4"/></clipPath>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185.4" fill="url(#bg_brackets)"/>
+  <g clip-path="url(#clip_brackets)"><path d="M 414 296 H 348 Q 296 296 296 348 V 414 M 610 296 H 676 Q 728 296 728 348 V 414 M 414 728 H 348 Q 296 728 296 676 V 610 M 610 728 H 676 Q 728 728 728 676 V 610" fill="none" stroke="#E8EAF0"
+        stroke-width="42" stroke-linecap="round"/><text x="512" y="652.4" font-family="'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-weight="700"
+    font-size="390" text-anchor="middle" fill="#E8EAF0">3</text></g>
+  <rect x="103" y="103" width="818" height="818" rx="182.4"
+    fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6"/>
+</svg>

@@ -12,7 +12,7 @@ INSTALL_DIR := /Applications
 # `release-app` overrides it with the universal one.
 BINARY      ?= $(BUILD_DIR)/$(APP_NAME)
 
-.PHONY: build test app bundle universal release-app dmg install uninstall run clean
+.PHONY: build test app bundle universal release-app dmg icns install uninstall run clean
 
 build:
 	swift build -c release
@@ -24,12 +24,34 @@ test:
 # use `app` for a local build or `release-app` for a universal one.
 bundle:
 	rm -rf $(APP)
-	mkdir -p $(APP)/Contents/MacOS
+	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
 	cp $(BINARY) $(APP)/Contents/MacOS/$(APP_NAME)
+	cp Resources/$(APP_NAME).icns $(APP)/Contents/Resources/
 	sed -e 's/@BUNDLE_ID@/$(BUNDLE_ID)/g' -e 's/@VERSION@/$(VERSION)/g' \
 		Resources/Info.plist.in > $(APP)/Contents/Info.plist
 	codesign --force --sign - $(APP)
 	@echo "built $(APP) $(VERSION)"
+
+# Regenerates the committed icns from the SVGs. Needs rsvg-convert (brew
+# install librsvg), which CI does not have, so the icns is committed rather
+# than built per release. 16px gets its own simplified artwork: at that size
+# the selection brackets and the digit merge into mush, so the small variant
+# drops the brackets and enlarges the digit.
+icns:
+	rm -rf .build/icon.iconset
+	mkdir -p .build/icon.iconset
+	rsvg-convert -w 16   -h 16   design/icon-small.svg -o .build/icon.iconset/icon_16x16.png
+	rsvg-convert -w 32   -h 32   icon.svg -o .build/icon.iconset/icon_16x16@2x.png
+	rsvg-convert -w 32   -h 32   icon.svg -o .build/icon.iconset/icon_32x32.png
+	rsvg-convert -w 64   -h 64   icon.svg -o .build/icon.iconset/icon_32x32@2x.png
+	rsvg-convert -w 128  -h 128  icon.svg -o .build/icon.iconset/icon_128x128.png
+	rsvg-convert -w 256  -h 256  icon.svg -o .build/icon.iconset/icon_128x128@2x.png
+	rsvg-convert -w 256  -h 256  icon.svg -o .build/icon.iconset/icon_256x256.png
+	rsvg-convert -w 512  -h 512  icon.svg -o .build/icon.iconset/icon_256x256@2x.png
+	rsvg-convert -w 512  -h 512  icon.svg -o .build/icon.iconset/icon_512x512.png
+	rsvg-convert -w 1024 -h 1024 icon.svg -o .build/icon.iconset/icon_512x512@2x.png
+	iconutil -c icns .build/icon.iconset -o Resources/$(APP_NAME).icns
+	@echo "built Resources/$(APP_NAME).icns"
 
 app: build
 	@$(MAKE) bundle BINARY=$(BUILD_DIR)/$(APP_NAME)
