@@ -1,12 +1,13 @@
-<img src="design/logo.png" align="right" width="140" height="140" alt="ctrlgrp icon: the digit 3 inside selection brackets">
-
 # ctrlgrp
+
+<img src="design/logo.png" align="right" width="140" height="140" alt="ctrlgrp icon: the digit 3 inside selection brackets">
 
 **Control groups for macOS.** Bind apps to number keys and switch with one
 keystroke, the way RTS players have always done it.
 
 [![CI](https://github.com/pgrekovich/ctrlgrp/actions/workflows/ci.yml/badge.svg)](https://github.com/pgrekovich/ctrlgrp/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/pgrekovich/ctrlgrp)](https://github.com/pgrekovich/ctrlgrp/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 * **Instant.** Event-driven from the keypress down, no polling anywhere, a few
   megabytes resident.
