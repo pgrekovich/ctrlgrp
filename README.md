@@ -24,10 +24,10 @@ keystroke, the way RTS players have always done it.
 ## Hotkeys
 
 | Keys | Action |
-| --- | --- |
-| `⌥` `1`&hellip;`9` `0` | Focus the app in that slot. Not running? It launches. Already frontmost? Focus returns to the app you came from (never relaunching one you quit). |
-| `⌥` `⇧` `1`&hellip;`9` `0` | Bind the frontmost app to that slot for this session. |
-| `⌥` `` ` `` | Toggle the HUD. |
+| :--- | :--- |
+| `⌥1`&nbsp;&ndash;&nbsp;`⌥0` | Focus the app in that slot. Not running? It launches. Already frontmost? Focus returns to the app you came from (never relaunching one you quit). |
+| `⌥⇧1`&nbsp;&ndash;&nbsp;`⌥⇧0` | Bind the frontmost app to that slot for this session. |
+| `` ⌥` `` | Toggle the HUD. |
 
 While ctrlgrp runs, these combinations no longer type their special
 characters. Everything else about your keyboard is untouched.
