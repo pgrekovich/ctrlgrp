@@ -44,15 +44,10 @@ bind a slot, hides itself after two seconds, and never steals focus.
 Requires macOS 14 or newer. Universal binary, Apple silicon and Intel.
 
 Grab the disk image from the [latest release][releases] and drag ctrlgrp into
-Applications. Builds are signed ad hoc rather than with an Apple Developer ID,
-so macOS quarantines the download and will claim the app is damaged. Clear
-that once:
+Applications. Releases are signed with a Developer ID and notarized by Apple,
+so it launches like any other app.
 
-```bash
-xattr -dr com.apple.quarantine /Applications/ctrlgrp.app
-```
-
-Or build from source, which skips the quarantine entirely:
+Or build from source:
 
 ```bash
 git clone https://github.com/pgrekovich/ctrlgrp.git

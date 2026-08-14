@@ -12,7 +12,21 @@ INSTALL_DIR := /Applications
 # `release-app` overrides it with the universal one.
 BINARY      ?= $(BUILD_DIR)/$(APP_NAME)
 
-.PHONY: build test app bundle universal release-app dmg icns install uninstall run clean
+# "-" is ad-hoc: fine for local development, quarantined when downloaded.
+# Releases pass the Developer ID identity instead, which also turns on the
+# hardened runtime and a secure timestamp, both required for notarization.
+SIGN_IDENTITY ?= -
+ifeq ($(SIGN_IDENTITY),-)
+SIGN_FLAGS :=
+else
+SIGN_FLAGS := --options runtime --timestamp
+endif
+
+# The notarytool keychain profile to submit with. Created once, locally via
+# `xcrun notarytool store-credentials`, in CI by the release workflow.
+NOTARY_PROFILE ?= ctrlgrp-notary
+
+.PHONY: build test app bundle universal release-app dmg notarize icns install uninstall run clean
 
 build:
 	swift build -c release
@@ -29,7 +43,7 @@ bundle:
 	cp Resources/$(APP_NAME).icns Resources/menubar.png $(APP)/Contents/Resources/
 	sed -e 's/@BUNDLE_ID@/$(BUNDLE_ID)/g' -e 's/@VERSION@/$(VERSION)/g' \
 		Resources/Info.plist.in > $(APP)/Contents/Info.plist
-	codesign --force --sign - $(APP)
+	codesign --force $(SIGN_FLAGS) --sign "$(SIGN_IDENTITY)" $(APP)
 	@echo "built $(APP) $(VERSION)"
 
 # Regenerates the committed icns from the SVGs. Needs rsvg-convert (brew
@@ -82,7 +96,17 @@ dmg: release-app
 	ln -s /Applications .build/dmg/Applications
 	hdiutil create -volname "$(APP_NAME) $(VERSION)" -srcfolder .build/dmg \
 		-ov -format UDZO $(DMG) >/dev/null
+ifneq ($(SIGN_IDENTITY),-)
+	codesign --force --timestamp --sign "$(SIGN_IDENTITY)" $(DMG)
+endif
 	@echo "built $(DMG)"
+
+# Submits the disk image to Apple, waits for the verdict, and staples the
+# ticket so Gatekeeper can verify offline. Fails loudly on rejection.
+notarize:
+	xcrun notarytool submit $(DMG) --keychain-profile $(NOTARY_PROFILE) --wait
+	xcrun stapler staple $(DMG)
+	spctl --assess --type open --context context:primary-signature -vv $(DMG)
 
 # Runs the bundled binary in the foreground so logs land in the terminal.
 run: app
