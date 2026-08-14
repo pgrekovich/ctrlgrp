@@ -5,7 +5,7 @@
 **Control groups for macOS.** Bind apps to number keys, switch with one
 keystroke, like in an RTS.
 
-* **Instant.** Event-driven, zero polling, a few megabytes resident.
+* **Instant.** Event-driven, zero polling, ~20 MB resident.
 * **Zero permissions.** No Accessibility, no Input Monitoring, no prompts.
 * **Dynamic.** Rebind live with a hotkey, not a config file.
 * **Layout-proof.** Physical keys, identical on any layout.
