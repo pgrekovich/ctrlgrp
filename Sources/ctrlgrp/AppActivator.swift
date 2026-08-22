@@ -15,10 +15,12 @@ final class AppActivator {
         guard let target else {
             return Situation(target: nil, previous: previous)
         }
+        let running = runningApp(target)
         return Situation(
             target: target,
             isTargetFrontmost: frontmostBundleID == target,
-            isTargetRunning: runningApp(target) != nil,
+            isTargetRunning: running != nil,
+            isTargetWindowless: running.map { !hasWindows($0) } ?? false,
             isTargetInstalled: workspace.urlForApplication(withBundleIdentifier: target) != nil,
             previous: previous,
             isPreviousRunning: previous.map { runningApp($0) != nil } ?? false
@@ -47,6 +49,11 @@ final class AppActivator {
             if !app.activate() {
                 Log.warn("could not activate \(bundleID)")
             }
+        case .reopen(let bundleID):
+            // Opening an already-running app through LaunchServices is what a
+            // Dock click does: the app gets a reopen event and responds by
+            // making a window. Plain activate() would only move focus.
+            launch(bundleID)
         case .launch(let bundleID):
             launch(bundleID)
         case .appMissing(let bundleID):
@@ -56,6 +63,22 @@ final class AppActivator {
 
     private func runningApp(_ bundleID: String) -> NSRunningApplication? {
         workspace.runningApplications.first { $0.bundleIdentifier == bundleID }
+    }
+
+    /// Whether the app owns any ordinary windows anywhere: any Space, minimized
+    /// or not. Layer 0 excludes menu bar extras, overlays and other chrome that
+    /// activation could never bring forward. Window owner and layer come back
+    /// without any permission (only window *names* need Screen Recording), so
+    /// this keeps the zero-permissions promise. If the list is unavailable,
+    /// assume windows exist and degrade to a plain activate.
+    private func hasWindows(_ app: NSRunningApplication) -> Bool {
+        let options: CGWindowListOption = [.optionAll, .excludeDesktopElements]
+        guard let infos = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]]
+        else { return true }
+        return infos.contains { info in
+            info[kCGWindowOwnerPID as String] as? pid_t == app.processIdentifier
+                && info[kCGWindowLayer as String] as? Int == 0
+        }
     }
 
     private func launch(_ bundleID: String) {

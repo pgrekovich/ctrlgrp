@@ -9,6 +9,10 @@ public enum SwitchAction: Equatable, Sendable {
     /// never resurrect an app the user deliberately quit, so this action refuses
     /// to launch even if the app disappears mid-flight.
     case activateIfRunning(String)
+    /// The app is running but has no windows to bring forward, so plain
+    /// activation would visibly do nothing. Ask the system to open it again,
+    /// the same thing a Dock click does, and the app makes itself a window.
+    case reopen(String)
     case launch(String)
     case appMissing(String)
 }
@@ -18,6 +22,9 @@ public struct Situation: Equatable, Sendable {
     public var target: String?
     public var isTargetFrontmost: Bool
     public var isTargetRunning: Bool
+    /// Only meaningful while the target is running: no ordinary windows on any
+    /// Space, minimized or not.
+    public var isTargetWindowless: Bool
     public var isTargetInstalled: Bool
     public var previous: String?
     public var isPreviousRunning: Bool
@@ -26,6 +33,7 @@ public struct Situation: Equatable, Sendable {
         target: String?,
         isTargetFrontmost: Bool = false,
         isTargetRunning: Bool = false,
+        isTargetWindowless: Bool = false,
         isTargetInstalled: Bool = true,
         previous: String? = nil,
         isPreviousRunning: Bool = true
@@ -33,6 +41,7 @@ public struct Situation: Equatable, Sendable {
         self.target = target
         self.isTargetFrontmost = isTargetFrontmost
         self.isTargetRunning = isTargetRunning
+        self.isTargetWindowless = isTargetWindowless
         self.isTargetInstalled = isTargetInstalled
         self.previous = previous
         self.isPreviousRunning = isPreviousRunning
@@ -51,7 +60,9 @@ public func decideSwitch(_ situation: Situation) -> SwitchAction {
         return .activateIfRunning(previous)
     }
 
-    if situation.isTargetRunning { return .activate(target) }
+    if situation.isTargetRunning {
+        return situation.isTargetWindowless ? .reopen(target) : .activate(target)
+    }
     guard situation.isTargetInstalled else { return .appMissing(target) }
     return .launch(target)
 }

@@ -14,6 +14,16 @@ import CtrlgrpCore
     #expect(decideSwitch(situation) == .activate("com.apple.Safari"))
 }
 
+@Test func runningAppWithoutWindowsGetsReopened() {
+    let situation = Situation(
+        target: "com.apple.Safari",
+        isTargetRunning: true,
+        isTargetWindowless: true,
+        previous: "com.apple.Mail"
+    )
+    #expect(decideSwitch(situation) == .reopen("com.apple.Safari"))
+}
+
 @Test func installedButNotRunningAppGetsLaunched() {
     let situation = Situation(target: "com.apple.Safari", isTargetRunning: false)
     #expect(decideSwitch(situation) == .launch("com.apple.Safari"))
