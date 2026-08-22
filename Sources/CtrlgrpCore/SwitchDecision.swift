@@ -9,9 +9,10 @@ public enum SwitchAction: Equatable, Sendable {
     /// never resurrect an app the user deliberately quit, so this action refuses
     /// to launch even if the app disappears mid-flight.
     case activateIfRunning(String)
-    /// The app is running but has no windows to bring forward, so plain
-    /// activation would visibly do nothing. Ask the system to open it again,
-    /// the same thing a Dock click does, and the app makes itself a window.
+    /// The app is running but shows nothing a plain activation could bring
+    /// forward. Ask the system to open it again, the same thing a Dock click
+    /// does: a truly windowless app makes itself a window, a minimized or
+    /// hidden one comes back, one parked on another Space pulls you over.
     case reopen(String)
     case launch(String)
     case appMissing(String)
@@ -22,8 +23,10 @@ public struct Situation: Equatable, Sendable {
     public var target: String?
     public var isTargetFrontmost: Bool
     public var isTargetRunning: Bool
-    /// Only meaningful while the target is running: no ordinary windows on any
-    /// Space, minimized or not.
+    /// Only meaningful while the target is running: nothing on screen a plain
+    /// activate could bring forward. Minimized, hidden and other-Space windows
+    /// count as windowless on purpose; the reopen this leads to handles them
+    /// the way a Dock click would.
     public var isTargetWindowless: Bool
     public var isTargetInstalled: Bool
     public var previous: String?

@@ -65,19 +65,26 @@ final class AppActivator {
         workspace.runningApplications.first { $0.bundleIdentifier == bundleID }
     }
 
-    /// Whether the app owns any ordinary windows anywhere: any Space, minimized
-    /// or not. Layer 0 excludes menu bar extras, overlays and other chrome that
-    /// activation could never bring forward. Window owner and layer come back
-    /// without any permission (only window *names* need Screen Recording), so
-    /// this keeps the zero-permissions promise. If the list is unavailable,
-    /// assume windows exist and degrade to a plain activate.
+    /// Whether the app has a window the user could actually see after a plain
+    /// activate. Only on-screen counts: apps keep phantom off-screen layer-0
+    /// windows around (Chromium and Ghostty hold half a dozen with all windows
+    /// closed), so "owns any window at all" is always true and useless.
+    /// Minimized, hidden and other-Space windows are off-screen too and land
+    /// on the reopen path, which treats them exactly like a Dock click:
+    /// restore, unhide, or switch Spaces. Layer 0 excludes menu bar extras and
+    /// overlays; the alpha check excludes invisible helper windows. Owner,
+    /// layer and alpha come back without any permission (only window *names*
+    /// need Screen Recording), so this keeps the zero-permissions promise.
+    /// If the list is unavailable, assume windows exist and degrade to a
+    /// plain activate.
     private func hasWindows(_ app: NSRunningApplication) -> Bool {
-        let options: CGWindowListOption = [.optionAll, .excludeDesktopElements]
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let infos = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]]
         else { return true }
         return infos.contains { info in
             info[kCGWindowOwnerPID as String] as? pid_t == app.processIdentifier
                 && info[kCGWindowLayer as String] as? Int == 0
+                && (info[kCGWindowAlpha as String] as? Double ?? 1) > 0
         }
     }
 
