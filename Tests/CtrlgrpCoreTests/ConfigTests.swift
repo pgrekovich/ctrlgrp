@@ -111,3 +111,13 @@ private func parse(_ json: String) throws -> ConfigParseResult {
     let result = try parse(#"{ "menubar": { "enabled": false } }"#)
     #expect(result.config.menuBarEnabled == false)
 }
+
+@Test func toggleBackDefaultsToEnabledWhenAbsent() throws {
+    let result = try parse("{}")
+    #expect(result.config.toggleBackEnabled == true)
+}
+
+@Test func toggleBackCanBeDisabled() throws {
+    let result = try parse(#"{ "toggleBack": { "enabled": false } }"#)
+    #expect(result.config.toggleBackEnabled == false)
+}

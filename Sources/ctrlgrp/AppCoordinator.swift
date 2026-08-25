@@ -9,6 +9,7 @@ final class AppCoordinator {
     private let activator = AppActivator()
     private let hudEnabled: Bool
     private let menuBarEnabled: Bool
+    private var toggleBackEnabled: Bool
     private var hotkeys: HotkeyManager?
     private var watcher: ConfigWatcher?
     private var statusItem: StatusItemController?
@@ -21,12 +22,14 @@ final class AppCoordinator {
             bindings = Bindings(defaults: loaded.config.defaults)
             hudEnabled = loaded.config.hudEnabled
             menuBarEnabled = loaded.config.menuBarEnabled
+            toggleBackEnabled = loaded.config.toggleBackEnabled
         case .unparsable(let warning):
             // Nothing to preserve yet: this is the first read of the process.
             Log.warn(warning)
             bindings = Bindings(defaults: Config.empty.defaults)
             hudEnabled = Config.empty.hudEnabled
             menuBarEnabled = Config.empty.menuBarEnabled
+            toggleBackEnabled = Config.empty.toggleBackEnabled
         }
     }
 
@@ -68,6 +71,7 @@ final class AppCoordinator {
             for warning in loaded.warnings { Log.warn(warning) }
             // Session bindings outrank defaults and survive a reload by design.
             bindings.updateDefaults(loaded.config.defaults)
+            toggleBackEnabled = loaded.config.toggleBackEnabled
             Log.info("reloaded config, \(bindings.effectiveAll.count) slots bound")
             hud.refresh(bindings: bindings.effectiveAll)
         case .unparsable(let warning):
@@ -85,7 +89,8 @@ final class AppCoordinator {
         case .focus(let slot):
             let situation = activator.situation(
                 target: bindings.effective(slot),
-                previous: tracker.previous
+                previous: tracker.previous,
+                toggleBackEnabled: toggleBackEnabled
             )
             activator.perform(decideSwitch(situation))
         case .bind(let slot):

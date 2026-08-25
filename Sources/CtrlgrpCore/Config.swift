@@ -6,11 +6,18 @@ public struct Config: Equatable, Sendable {
     public var defaults: [Slot: String]
     public var hudEnabled: Bool
     public var menuBarEnabled: Bool
+    public var toggleBackEnabled: Bool
 
-    public init(defaults: [Slot: String] = [:], hudEnabled: Bool = true, menuBarEnabled: Bool = true) {
+    public init(
+        defaults: [Slot: String] = [:],
+        hudEnabled: Bool = true,
+        menuBarEnabled: Bool = true,
+        toggleBackEnabled: Bool = true
+    ) {
         self.defaults = defaults
         self.hudEnabled = hudEnabled
         self.menuBarEnabled = menuBarEnabled
+        self.toggleBackEnabled = toggleBackEnabled
     }
 
     public static let empty = Config()
@@ -54,6 +61,7 @@ extension Config {
         var defaults: [String: String]?
         var hud: Toggle?
         var menubar: Toggle?
+        var toggleBack: Toggle?
     }
 
     public static func parse(_ data: Data) throws -> ConfigParseResult {
@@ -82,7 +90,8 @@ extension Config {
             config: Config(
                 defaults: defaults,
                 hudEnabled: dto.hud?.enabled ?? true,
-                menuBarEnabled: dto.menubar?.enabled ?? true
+                menuBarEnabled: dto.menubar?.enabled ?? true,
+                toggleBackEnabled: dto.toggleBack?.enabled ?? true
             ),
             // Dictionary iteration order is unspecified; sorting keeps the
             // warning list stable for tests and for log diffing.

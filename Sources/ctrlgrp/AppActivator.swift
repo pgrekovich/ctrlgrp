@@ -11,9 +11,13 @@ final class AppActivator {
         workspace.frontmostApplication?.bundleIdentifier
     }
 
-    func situation(target: String?, previous: String?) -> Situation {
+    func situation(target: String?, previous: String?, toggleBackEnabled: Bool) -> Situation {
         guard let target else {
-            return Situation(target: nil, previous: previous)
+            return Situation(
+                target: nil,
+                previous: previous,
+                toggleBackEnabled: toggleBackEnabled
+            )
         }
         let running = runningApp(target)
         return Situation(
@@ -23,7 +27,8 @@ final class AppActivator {
             isTargetWindowless: running.map { !hasWindows($0) } ?? false,
             isTargetInstalled: workspace.urlForApplication(withBundleIdentifier: target) != nil,
             previous: previous,
-            isPreviousRunning: previous.map { runningApp($0) != nil } ?? false
+            isPreviousRunning: previous.map { runningApp($0) != nil } ?? false,
+            toggleBackEnabled: toggleBackEnabled
         )
     }
 

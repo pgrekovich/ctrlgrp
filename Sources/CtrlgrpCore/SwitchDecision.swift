@@ -31,6 +31,7 @@ public struct Situation: Equatable, Sendable {
     public var isTargetInstalled: Bool
     public var previous: String?
     public var isPreviousRunning: Bool
+    public var toggleBackEnabled: Bool
 
     public init(
         target: String?,
@@ -39,7 +40,8 @@ public struct Situation: Equatable, Sendable {
         isTargetWindowless: Bool = false,
         isTargetInstalled: Bool = true,
         previous: String? = nil,
-        isPreviousRunning: Bool = true
+        isPreviousRunning: Bool = true,
+        toggleBackEnabled: Bool = true
     ) {
         self.target = target
         self.isTargetFrontmost = isTargetFrontmost
@@ -48,6 +50,7 @@ public struct Situation: Equatable, Sendable {
         self.isTargetInstalled = isTargetInstalled
         self.previous = previous
         self.isPreviousRunning = isPreviousRunning
+        self.toggleBackEnabled = toggleBackEnabled
     }
 }
 
@@ -55,6 +58,7 @@ public func decideSwitch(_ situation: Situation) -> SwitchAction {
     guard let target = situation.target else { return .doNothing }
 
     if situation.isTargetFrontmost {
+        guard situation.toggleBackEnabled else { return .doNothing }
         guard let previous = situation.previous, previous != target else { return .doNothing }
         // Going back is a navigation, not a request to start something: if the
         // app you came from is gone, there is nowhere to go and pressing again

@@ -58,14 +58,16 @@ System Settings > General > Login Items.
     "3": "com.mitchellh.ghostty"
   },
   "hud": { "enabled": true },
-  "menubar": { "enabled": true }
+  "menubar": { "enabled": true },
+  "toggleBack": { "enabled": true }
 }
 ```
 
 `⌥⇧N` bindings are session-only: restart and the defaults are back. ctrlgrp
 never writes this file (one exception: Create Config in the menu when you have
-none). The two `enabled` switches are read at launch, everything else applies
-on save. Bundle ids:
+none). `hud.enabled` and `menubar.enabled` are read at launch; `toggleBack.enabled`
+applies on save. Set it to `false` to make repeated presses of the frontmost
+app's hotkey do nothing. Bundle ids:
 
 ```bash
 osascript -e 'id of app "Google Chrome"'

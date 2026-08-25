@@ -96,7 +96,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             "1": "com.apple.Safari"
           },
           "hud": { "enabled": true },
-          "menubar": { "enabled": true }
+          "menubar": { "enabled": true },
+          "toggleBack": { "enabled": true }
         }
         """
         do {

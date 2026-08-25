@@ -48,6 +48,17 @@ import CtrlgrpCore
     #expect(decideSwitch(situation) == .activateIfRunning("com.apple.Mail"))
 }
 
+@Test func pressingTheFocusedSlotDoesNothingWhenToggleBackIsDisabled() {
+    let situation = Situation(
+        target: "com.apple.Safari",
+        isTargetFrontmost: true,
+        isTargetRunning: true,
+        previous: "com.apple.Mail",
+        toggleBackEnabled: false
+    )
+    #expect(decideSwitch(situation) == .doNothing)
+}
+
 @Test func togglingBackToAnAppTheUserQuitDoesNothing() {
     let situation = Situation(
         target: "com.apple.Safari",
