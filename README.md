@@ -73,6 +73,14 @@ app's hotkey do nothing. Bundle ids:
 osascript -e 'id of app "Google Chrome"'
 ```
 
+## Hotkeys stopped working?
+
+Open the menu. If it says "Hotkeys blocked by Secure Input", macOS is
+withholding every ⌥ hotkey from every app, not just ctrlgrp: a password field
+turned Secure Input on and never turned it off. When the culprit is
+loginwindow, a macOS bug after unlocking the screen, locking again does not
+help; log out and back in. The menu bar icon dims while this lasts.
+
 ## Menu bar
 
 Reload, edit, reveal the config, quit. Bartender hides new items by default,

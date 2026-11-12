@@ -13,6 +13,7 @@ final class AppCoordinator {
     private var hotkeys: HotkeyManager?
     private var watcher: ConfigWatcher?
     private var statusItem: StatusItemController?
+    private var secureInput: SecureInputMonitor?
     private let hud = HUDPanel()
 
     init() {
@@ -59,10 +60,19 @@ final class AppCoordinator {
         // Like the HUD flag, read once at launch: a status item appearing and
         // vanishing on config edits would be more surprising than a restart.
         if menuBarEnabled {
-            statusItem = StatusItemController(configURL: Config.defaultURL) { [weak self] in
-                self?.reloadConfig()
-            }
+            statusItem = StatusItemController(
+                configURL: Config.defaultURL,
+                onReload: { [weak self] in self?.reloadConfig() },
+                onMenuOpen: { [weak self] in self?.secureInput?.check() }
+            )
         }
+
+        // After the status item, so the first check has a menu to warn in.
+        let secureInput = SecureInputMonitor { [weak self] state in
+            self?.secureInputChanged(state)
+        }
+        self.secureInput = secureInput
+        secureInput.start()
     }
 
     private func reloadConfig() {
@@ -82,6 +92,18 @@ final class AppCoordinator {
             Log.warn(warning)
             Log.warn("keeping previous config, \(bindings.effectiveAll.count) slots still bound")
         }
+    }
+
+    private func secureInputChanged(_ state: SecureInputState) {
+        switch state {
+        case .on(let holder):
+            let warning = secureInputWarning(holder: holder)
+            let pid = holder.map { " (pid \($0.pid))" } ?? ""
+            Log.warn("\(warning.headline). \(warning.remedy)\(pid)")
+        case .off:
+            Log.info("secure input released, hotkeys deliverable again")
+        }
+        statusItem?.showSecureInput(state)
     }
 
     private func handle(_ trigger: HotkeyManager.Trigger) {

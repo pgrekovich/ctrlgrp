@@ -9,14 +9,19 @@ import CtrlgrpCore
 final class StatusItemController: NSObject, NSMenuDelegate {
     private let configURL: URL
     private let onReload: () -> Void
+    private let onMenuOpen: () -> Void
     // NSStatusBar does not retain handed-out items; dropping this reference
     // would remove the icon from the bar.
     private var statusItem: NSStatusItem?
     private let editItem = NSMenuItem()
+    // Present only while Secure Input blocks the hotkeys, at the top of the
+    // menu where opening it is enough to see why nothing works.
+    private let warningItems = [NSMenuItem(), NSMenuItem(), .separator()]
 
-    init(configURL: URL, onReload: @escaping () -> Void) {
+    init(configURL: URL, onReload: @escaping () -> Void, onMenuOpen: @escaping () -> Void) {
         self.configURL = configURL
         self.onReload = onReload
+        self.onMenuOpen = onMenuOpen
         super.init()
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -65,8 +70,41 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     /// The edit item's label tells the truth about what the click will do,
     /// re-checked every time the menu opens rather than cached at launch.
     func menuNeedsUpdate(_ menu: NSMenu) {
+        onMenuOpen()
         let exists = FileManager.default.fileExists(atPath: configURL.path(percentEncoded: false))
         editItem.title = exists ? "Edit Config..." : "Create Config..."
+    }
+
+    /// Shows or clears the Secure Input warning. The glyph dims while the
+    /// hotkeys are blocked, so the state is visible without opening the menu.
+    func showSecureInput(_ state: SecureInputState) {
+        guard let menu = statusItem?.menu else { return }
+        for item in warningItems where item.menu != nil {
+            menu.removeItem(item)
+        }
+
+        let button = statusItem?.button
+        guard case .on(let holder) = state else {
+            button?.appearsDisabled = false
+            button?.toolTip = "ctrlgrp"
+            return
+        }
+
+        let warning = secureInputWarning(holder: holder)
+        warningItems[0].title = warning.headline
+        warningItems[0].image = NSImage(
+            systemSymbolName: "exclamationmark.triangle",
+            accessibilityDescription: nil
+        )
+        warningItems[1].title = warning.remedy
+        // Indented under the headline's icon so the two lines read as one note.
+        warningItems[1].indentationLevel = 1
+        for (index, item) in warningItems.enumerated() {
+            // No action means AppKit greys it out: it is a notice, not a button.
+            menu.insertItem(item, at: index)
+        }
+        button?.appearsDisabled = true
+        button?.toolTip = "ctrlgrp: \(warning.headline.lowercased())"
     }
 
     @objc private func reloadConfig() {
